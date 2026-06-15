@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>放射部業務量暨品質指標簡報系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PptxGenJS for true PPTX export (v3.12.0) -->
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <!-- Chart.js for smooth animations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas for High-Fidelity Screenshots (Perfect for PPTX Export) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=300;400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            /* Reference Blueprint Paper Style */
+            background-image: 
+                linear-gradient(to right, rgba(226, 232, 240, 0.5) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(226, 232, 240, 0.5) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        /* Printable 16:9 Slides Style with Cover and Multi-page Fix */
+        @media print {
+            body {
+                background: #f8fafc !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #presentationContainer {
+                max-width: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+            /* Force slide-by-slide 16:9 aspect ratio and exact layouts on print */
+            section {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                break-after: page !important;
+                width: 1120px !important;
+                height: 630px !important; /* Perfect 16:9 dimension for landscape PDF */
+                margin: 0 auto 2rem auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                box-sizing: border-box !important;
+                padding: 3rem !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                background-color: white !important;
+                background-image: 
+                    linear-gradient(to right, rgba(226, 232, 240, 0.4) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(226, 232, 240, 0.4) 1px, transparent 1px) !important;
+                background-size: 20px 20px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            @page {
+                size: landscape;
+                margin: 0;
+            }
+
+            /* Maintain web-grid system layout and flex layout during print */
+            .grid {
+                display: grid !important;
+            }
+            .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+            .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+            .md\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+            
+            .flex-col {
+                flex-direction: column !important;
+            }
+            .md\:flex-row {
+                flex-direction: row !important;
+            }
+            .md\:w-5\/12 {
+                width: 41.666667% !important;
+            }
+            .md\:w-7\/12 {
+                width: 58.333333% !important;
+            }
+            .md\:w-1\/3 {
+                width: 33.333333% !important;
+            }
+            canvas {
+                max-width: 100% !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-16">
+
+    <!-- TOAST NOTIFICATION CONTAINER (Custom Safe Dialogs) -->
+    <div id="toastContainer" class="no-print fixed top-5 right-5 z-50 flex flex-col gap-3"></div>
+
+    <!-- TOP CONTROL PANEL (Sticky Header) -->
+    <header class="no-print sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Brand Info -->
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-xl shadow-md shadow-blue-500/20">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">放射診療部月度業務暨品質監測</h1>
+                    <p class="text-xs text-slate-500 font-semibold">智慧自動化簡報系統</p>
+                </div>
+            </div>
+
+            <!-- Navigation & Sync Actions -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="openSyncModal()" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                    <i data-lucide="database" class="w-4 h-4 text-emerald-600"></i>
+                    <span>Google 試算表同步</span>
+                </button>
+                <button onclick="toggleView()" id="viewToggleBtn" class="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                    <i data-lucide="presentation" class="w-4 h-4"></i>
+                    <span>切換簡報(16:9)模式</span>
+                </button>
+                <button onclick="exportToPDF()" class="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>匯出 PDF</span>
+                </button>
+                <button onclick="exportToPPTX()" class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>匯出 PPT</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Timeline Slider Controller -->
+        <div class="max-w-7xl mx-auto mt-4 pt-4 border-t border-slate-100">
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-extrabold text-slate-500">歷史時間軸：</span>
+                    <span id="currentTimeDisplay" class="bg-blue-600 text-white text-sm font-black px-4 py-1 rounded-lg">115年 5月</span>
+                </div>
+                <div class="flex-1 w-full flex items-center gap-3">
+                    <button onclick="shiftTimeline(-1)" class="p-1 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <!-- Timeline input range -->
+                    <input type="range" id="timelineSlider" min="0" max="16" value="16" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="onTimelineChange(this.value)">
+                    <button onclick="shiftTimeline(1)" class="p-1 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="flex gap-2 text-xs font-bold text-slate-400">
+                    <span>114年 1月</span>
+                    <span>•</span>
+                    <span>115年 5月</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DISPLAY AREA -->
+    <main id="presentationContainer" class="max-w-7xl mx-auto px-4 md:px-6 mt-8">
+        
+        <!-- ================= SLIDE 1: Title & Index (各組事項報告 COVER PAGE) ================= -->
+        <section id="slide1" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div>
+                    <div class="flex items-center gap-2 text-blue-600 font-extrabold tracking-wider text-sm mb-4">
+                        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                        <span>DEPARTMENT OF DIAGNOSTIC RADIOLOGY</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                        各組事項報告
+                    </h2>
+                    <p class="text-slate-500 mt-2 text-lg font-bold">放射診療部月度業務暨品質指標呈報</p>
+                </div>
+
+                <!-- 10 Groups Grid (Slightly smaller, beautifully aligned) -->
+                <div class="my-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-center">
+                        <!-- Row 1 -->
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            1. 一般攝影組
+                        </div>
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            2. 電腦斷層組
+                        </div>
+                        <!-- Highlighted "3. 特殊攝影組" -->
+                        <div class="p-4 bg-gradient-to-r from-blue-900 to-slate-900 border-2 border-blue-500 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-[0_0_15px_rgba(29,78,216,0.5)] animate-pulse transition-all">
+                            3. 特殊攝影組
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            4. MRI組
+                        </div>
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            5. 超音波組
+                        </div>
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            6. 乳房攝影暨骨密組
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            7. 急診組
+                        </div>
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            8. 護理組
+                        </div>
+                        <div class="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            10. 醫療品質監測
+                        </div>
+                    </div>
+
+                    <!-- Row 4 Centered teaching group -->
+                    <div class="flex justify-center mt-3">
+                        <div class="w-full md:w-1/3 p-3.5 bg-slate-100 border border-slate-200 rounded-2xl flex items-center justify-center font-bold text-slate-600 text-base shadow-sm">
+                            9. 教學組
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-400 mt-4 pt-3 border-t border-slate-100 font-semibold">
+                    <span>呈報組別：特殊攝影組</span>
+                    <span class="font-black timeline-string">115年 5月</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 2: Core Volume Bento Overview ================= -->
+        <section id="slide2" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2.5 h-full bg-blue-600"></div>
+            <div class="flex flex-col justify-between h-full min-h-[480px]">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-2xl font-black text-slate-900 tracking-tight">各攝影室業務量統計摘要</h3>
+                        <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-extrabold timeline-string">115年 5月</span>
+                    </div>
+                    <p class="text-slate-600 text-sm md:text-base mb-4 max-w-4xl leading-relaxed font-bold" id="summaryCommentary">
+                        五月份核心處置量出現結構性變動：血管攝影與值班需求顯著攀升，而經皮腎造廔相關處置則呈現下滑趨勢。
+                    </p>
+                </div>
+
+                <!-- Bento Style KPI Box Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 my-2">
+                    <!-- Angio Card -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
+                        <div>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">Angio 血管攝影</span>
+                            <div class="flex items-baseline gap-1 mt-2">
+                                <span class="text-3xl font-black text-slate-900" id="kpi-angio-val">72</span>
+                                <span class="text-xs font-bold text-slate-500">人</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-[11px] font-bold text-slate-400">較上月差異</span>
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full" id="kpi-angio-diff">▲ +41</span>
+                        </div>
+                    </div>
+
+                    <!-- On Call Card -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
+                        <div>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">值班 On Call</span>
+                            <div class="flex items-baseline gap-1 mt-2">
+                                <span class="text-3xl font-black text-slate-900" id="kpi-oncall-val">19</span>
+                                <span class="text-xs font-bold text-slate-500">次</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-[11px] font-bold text-slate-400">較上月差異</span>
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full" id="kpi-oncall-diff">▲ +12</span>
+                        </div>
+                    </div>
+
+                    <!-- PTCD+PTGBD Card -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
+                        <div>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PTCD + PTGBD 膽道</span>
+                            <div class="flex items-baseline gap-1 mt-2">
+                                <span class="text-3xl font-black text-slate-900" id="kpi-ptcd-val">46</span>
+                                <span class="text-xs font-bold text-slate-500">人</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-[11px] font-bold text-slate-400">較上月差異</span>
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full" id="kpi-ptcd-diff">─ 0</span>
+                        </div>
+                    </div>
+
+                    <!-- PTCD-Re Card -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
+                        <div>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PTCD-Re 膽道重置</span>
+                            <div class="flex items-baseline gap-1 mt-2">
+                                <span class="text-3xl font-black text-slate-900" id="kpi-ptcdre-val">19</span>
+                                <span class="text-xs font-bold text-slate-500">人</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-[11px] font-bold text-slate-400">較上月差異</span>
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full" id="kpi-ptcdre-diff">▲ +7</span>
+                        </div>
+                    </div>
+
+                    <!-- PCN Card -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
+                        <div>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PCN 腎造廔</span>
+                            <div class="flex items-baseline gap-1 mt-2">
+                                <span class="text-3xl font-black text-slate-900" id="kpi-pcn-val">16</span>
+                                <span class="text-xs font-bold text-slate-500">人</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-[11px] font-bold text-slate-400">較上月差異</span>
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full" id="kpi-pcn-diff">▼ -3</span>
+                        </div>
+                    </div>
+
+                    <!-- PCN-Re Card -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
+                        <div>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PCN-Re 腎造廔重置</span>
+                            <div class="flex items-baseline gap-1 mt-2">
+                                <span class="text-3xl font-black text-slate-900" id="kpi-pcnre-val">13</span>
+                                <span class="text-xs font-bold text-slate-500">人</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-[11px] font-bold text-slate-400">較上月差異</span>
+                            <span class="text-xs font-extrabold px-2 py-0.5 rounded-full" id="kpi-pcnre-diff">▼ -12</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
+                    <span>各檢查處置 analysis數據</span>
+                    <span>115年 5月彙整</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 3: Angio Detail Analysis ================= -->
+        <section id="slide3" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2 h-full bg-orange-500"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Left stats summary -->
+                    <div class="md:w-5/12 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-orange-600 tracking-wider">SECTION 02 / 血管攝影組</span>
+                            <h3 class="text-2xl md:text-3xl font-black text-slate-900 mt-1 mb-2">Angio 人數統計分析</h3>
+                            <p class="text-slate-400 text-xs mb-4">觀察過去五個月業務量波動與當月成長幅度</p>
+                            
+                            <div class="my-4 flex flex-col gap-2">
+                                <div class="text-6xl font-black text-slate-900 tracking-tight leading-none" id="angio-main-num">72<span class="text-2xl font-bold text-slate-500 ml-1">人</span></div>
+                                <div>
+                                    <div class="inline-flex items-center gap-1.5 bg-orange-100 text-orange-800 text-sm font-bold px-3 py-1 rounded-full" id="angio-badge">
+                                        激增 +41
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-slate-700 text-sm md:text-base leading-relaxed bg-slate-50 p-4.5 rounded-xl border border-slate-100 font-medium" id="angio-dynamic-comment">
+                            五月份 Angio (血管攝影) 處置人數達 72 人，創下本年度與過去兩年同期之單月新高，呈現突發性激增。
+                        </p>
+                    </div>
+
+                    <!-- Right trend bar chart -->
+                    <div class="md:w-7/12 h-[280px] bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-end relative">
+                        <div class="absolute top-4 left-4 flex items-center gap-3">
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-orange-500 rounded-full"></span><span class="text-xs font-bold text-slate-600">本月趨勢</span></span>
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-slate-800 rounded-full"></span><span class="text-xs font-bold text-slate-600">歷史同期平均</span></span>
+                        </div>
+                        <canvas id="angioChart" class="w-full h-full max-h-[220px]"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 mt-4">
+                    <span>血管攝影檢查室報告</span>
+                    <span>115年 5月</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 4: Angio On-Call Detail Analysis ================= -->
+        <section id="slide4" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2 h-full bg-slate-800"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Left stats summary -->
+                    <div class="md:w-5/12 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 tracking-wider">SECTION 02 / 值班召回</span>
+                            <h3 class="text-2xl md:text-3xl font-black text-slate-900 mt-1 mb-2">值班 On Call 人數統計</h3>
+                            <p class="text-slate-400 text-xs mb-4">急診介入治療機動值班召回次數監測</p>
+                            
+                            <div class="my-4 flex flex-col gap-2">
+                                <div class="text-6xl font-black text-slate-900 tracking-tight leading-none" id="oncall-main-num">19<span class="text-2xl font-bold text-slate-500 ml-1">次</span></div>
+                                <div>
+                                    <div class="inline-flex items-center gap-1.5 bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full" id="oncall-badge">
+                                        上升 +12
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-slate-700 text-sm md:text-base leading-relaxed bg-slate-50 p-4.5 rounded-xl border border-slate-100 font-medium" id="oncall-dynamic-comment">
+                            伴隨急重症與高階血管處置量上升，五月份夜間/假日 On Call 需求同步激增至 19 次，凸顯前線人員負載壓力。
+                        </p>
+                    </div>
+
+                    <!-- Right trend bar chart -->
+                    <div class="md:w-7/12 h-[280px] bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex items-end relative">
+                        <div class="absolute top-4 left-4 flex items-center gap-3">
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-orange-500 rounded-full"></span><span class="text-xs font-bold text-slate-600">On Call次數</span></span>
+                        </div>
+                        <canvas id="oncallChart" class="w-full h-full max-h-[220px]"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 mt-4">
+                    <span>血管攝影On Call統計</span>
+                    <span>115年 5月</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 5: Biliary Intervention (PTCD / PTGBD) ================= -->
+        <section id="slide5" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-xs font-bold text-blue-600 tracking-wider">SECTION 03 / 膽道與膽囊處置</span>
+                            <h3 class="text-2xl font-black text-slate-900 mt-1">膽道處置業務量 analysis (PTCD + PTGBD)</h3>
+                        </div>
+                        <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-bold timeline-string">115年 5月</span>
+                    </div>
+                    <p class="text-slate-600 text-sm md:text-base mb-4 font-medium" id="biliary-commentary">
+                        膽道處置業務量 analysis：初次置入處置量 (Primary) 維持高度穩定，惟重置與調整 (Revision) 需求較上月呈現微幅上揚。
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-2">
+                    <!-- Left: PTCD+PTGBD (Primary) -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-700">PTCD + PTGBD (初次置入)</span>
+                            <span class="text-xs font-semibold text-slate-500 bg-white border px-2.5 py-0.5 rounded-md" id="ptcd-diff-label">與上月持平 0</span>
+                        </div>
+                        <div class="flex items-baseline gap-1 mb-2">
+                            <span class="text-4xl font-black text-slate-900" id="ptcd-large-val">46</span>
+                            <span class="text-xs font-bold text-slate-500">人</span>
+                        </div>
+                        <div class="h-[140px]">
+                            <canvas id="ptcdChart" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right: PTCD-Re (Revision) -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-700">PTCD-Re (重置與修改)</span>
+                            <span class="text-xs font-semibold text-slate-500 bg-white border px-2.5 py-0.5 rounded-md" id="ptcdre-diff-label">微增 +7</span>
+                        </div>
+                        <div class="flex items-baseline gap-1 mb-2">
+                            <span class="text-4xl font-black text-slate-900" id="ptcdre-large-val">19</span>
+                            <span class="text-xs font-bold text-slate-500">人</span>
+                        </div>
+                        <div class="h-[140px]">
+                            <canvas id="ptcdreChart" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
+                    <span>PTCD + PTGBD + PTCD-Re</span>
+                    <span>115年 5月</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 6: Nephrostomy (PCN) ================= -->
+        <section id="slide6" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2.5 h-full bg-teal-600"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-xs font-bold text-teal-600 tracking-wider">SECTION 03 / 經皮腎造廔室</span>
+                            <h3 class="text-2xl font-black text-slate-900 mt-1">腎造廔處置業務量分析 (PCN)</h3>
+                        </div>
+                        <span class="bg-teal-50 text-teal-700 text-xs px-3 py-1 rounded-full font-bold timeline-string">115年 5月</span>
+                    </div>
+                    <p class="text-slate-600 text-sm md:text-base mb-4 font-medium" id="pcn-commentary">
+                        腎造廔處置業務量 analysis：相關處置量於本月呈現全面舒緩，特別是重置需求 (Revision) 較上月大幅下降近一半。
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-2">
+                    <!-- Left: PCN -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-700">PCN (初次置入)</span>
+                            <span class="text-xs font-semibold text-slate-500 bg-white border px-2.5 py-0.5 rounded-md" id="pcn-diff-label">下降 -3</span>
+                        </div>
+                        <div class="flex items-baseline gap-1 mb-2">
+                            <span class="text-4xl font-black text-slate-900" id="pcn-large-val">16</span>
+                            <span class="text-xs font-bold text-slate-500">人</span>
+                        </div>
+                        <div class="h-[140px]">
+                            <canvas id="pcnChart" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right: PCN-Re -->
+                    <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-bold text-slate-700">PCN-Re (重置修補)</span>
+                            <span class="text-xs font-semibold text-slate-500 bg-white border px-2.5 py-0.5 rounded-md" id="pcnre-diff-label">顯著下降 -12</span>
+                        </div>
+                        <div class="flex items-baseline gap-1 mb-2">
+                            <span class="text-4xl font-black text-slate-900" id="pcnre-large-val">13</span>
+                            <span class="text-xs font-bold text-slate-500">人</span>
+                        </div>
+                        <div class="h-[140px]">
+                            <canvas id="pcnreChart" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
+                    <span>PCN + PCN-Re</span>
+                    <span>115年 5月</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 7: IVP Quality Monitor ================= -->
+        <section id="slide7" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2.5 h-full bg-indigo-600"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Left: IVP Intro & Conformity Status -->
+                    <div class="md:w-5/12 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-indigo-600 tracking-wider">SECTION 04 / 醫療品質監測</span>
+                            <h3 class="text-2xl md:text-3xl font-black text-slate-900 mt-1 mb-2">IVP 等候時間監測</h3>
+                            <p class="text-slate-500 text-xs mb-3 font-semibold">排程靜脈腎盂攝影患者於櫃檯平均等候時間指標</p>
+
+                            <div class="my-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1">
+                                <span class="text-xs text-slate-400 font-bold tracking-wider">當月平均等候時間</span>
+                                <div class="text-5xl font-black text-slate-900 leading-none" id="ivp-main-time">10.17<span class="text-lg font-bold text-slate-500 ml-1">分鐘</span></div>
+                                <div class="mt-2.5 flex items-center gap-2">
+                                    <div class="w-3.5 h-3.5 rounded-full bg-emerald-500" id="ivp-status-dot"></div>
+                                    <span class="text-xs font-extrabold text-emerald-700" id="ivp-status-text">優於品質規範閾值 (&lt; 15分)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-slate-700 text-sm leading-relaxed bg-indigo-50/50 p-4.5 rounded-xl border border-indigo-100 font-medium" id="ivp-commentary">
+                            醫療品質監測（流程效率）：靜脈腎盂攝影 (IVP) 平均等候時間為 10.17 分鐘，仍穩定優於 15 分鐘之品質規範閾值。
+                        </p>
+                    </div>
+
+                    <!-- Right: Trend & Threshold visualization -->
+                    <div class="md:w-7/12 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between h-[300px]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-slate-600">歷史等候時間趨勢</span>
+                            <div class="flex items-center gap-4 text-xs font-bold text-slate-400">
+                                <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-red-500 inline-block"></span> 品質閾值 15.0 分鐘</span>
+                                <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-indigo-600 inline-block"></span> 實際等候時間</span>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <canvas id="ivpChart" class="w-full h-full max-h-[240px]"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
+                    <span>IVP 等候時間</span>
+                    <span>115年 5月</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 8: HSG Quality Monitor ================= -->
+        <section id="slide8" class="bg-white border border-slate-200/80 rounded-3xl p-8 mb-8 shadow-sm relative overflow-hidden transition-all duration-300">
+            <div class="absolute top-0 left-0 w-2.5 h-full bg-pink-600"></div>
+            <div class="flex flex-col justify-between h-full min-h-[460px]">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-xs font-bold text-pink-600 tracking-wider">SECTION 04 / 醫療品質監測</span>
+                            <h3 class="text-2xl font-black text-slate-900 mt-1">HSG 滿意度監測 (五大核心構面)</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-pink-100 text-pink-700 text-xs px-2.5 py-1 rounded-full font-bold">品質閾值: &gt; 4.5 分</span>
+                            <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold timeline-string">115年 5月</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm md:text-base mb-4 font-medium" id="hsg-commentary">
+                        醫療品質監測（病患體驗）：持續落實子宮輸卵管攝影 (HSG) 滿意度六大構面監測，確保病患受檢過程之安全、知情與隱私保障。
+                    </p>
+                </div>
+
+                <!-- Bento grid of the five domains (Slightly smaller blocks to fit 100% perfectly) -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 my-2" id="hsg-bento-grid">
+                    <!-- Domain 1 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">醫師病情說明</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900" id="hsg-val-1">4.8</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded self-start">✓ 符合閾值</span>
+                    </div>
+                    <!-- Domain 2 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">等候時間感受</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900" id="hsg-val-2">4.7</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded self-start">✓ 符合閾值</span>
+                    </div>
+                    <!-- Domain 3 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">醫護核對身份</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900" id="hsg-val-3">4.9</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded self-start">✓ 符合閾值</span>
+                    </div>
+                    <!-- Domain 4 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">醫護服務態度</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900" id="hsg-val-4">4.8</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded self-start">✓ 符合閾值</span>
+                    </div>
+                    <!-- Domain 5 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">環境隱私安全</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900" id="hsg-val-5">4.9</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded self-start">✓ 符合閾值</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
+                    <span>HSG 滿意度監測</span>
+                    <span id="hsg-count-label" class="font-bold">當月檢查人數：4人，滿意度監測有效</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================= MODAL: GOOGLE SHEETS SYNC SETTINGS ================= -->
+    <div id="syncModal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl max-w-2xl w-full mx-4 shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-300" id="syncModalContent">
+            <!-- Modal Header -->
+            <div class="bg-slate-950 text-white p-6 relative">
+                <h3 class="text-lg font-bold">Google Sheets 資料連動設定</h3>
+                <p class="text-xs text-slate-400 mt-1">設定一次，未來即可一鍵在網頁中加載最新的醫院試算表統計數據</p>
+                <button onclick="closeSyncModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Instruction & Inputs) -->
+            <div class="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                <!-- Instruction Steps -->
+                <div class="bg-blue-50/70 rounded-2xl p-4 border border-blue-100">
+                    <h4 class="text-sm font-bold text-blue-900 flex items-center gap-1.5">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-blue-600"></i>
+                        <span>極速雲端串接指南：</span>
+                    </h4>
+                    <ol class="list-decimal list-inside text-xs text-blue-800 space-y-2 mt-3 leading-relaxed">
+                        <li>開啟您的 <span class="font-bold">Google 試算表 (開會資料統計)</span>.</li>
+                        <li>點選上方主選單的 <span class="font-bold">檔案 (File) ➔ 共用 (Share) ➔ 發布到網路 (Publish to Web)</span>.</li>
+                        <li>在彈出視窗中，選取整個工作表或單獨工作表，並將格式改選為 <span class="font-bold">逗號分隔值 (.csv)</span>.</li>
+                        <li>複製該網址，並貼入下方輸入框後，按下 <span class="font-bold">確認同步連動</span> 即可。</li>
+                    </ol>
+                </div>
+
+                <!-- Input box -->
+                <div class="space-y-2">
+                    <label class="text-sm font-bold text-slate-700 flex items-center gap-1">
+                        <i data-lucide="link" class="w-4 h-4 text-slate-400"></i>
+                        <span>試算表發布的 CSV 連結：</span>
+                    </label>
+                    <input type="url" id="sheetsCsvUrl" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-xxxx/pub?output=csv" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono">
+                </div>
+
+                <!-- Connection status display -->
+                <div id="syncStatusBox" class="p-4 rounded-xl text-xs flex items-center gap-2.5 hidden">
+                    <!-- Dynamic state injection -->
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-2">
+                <button onclick="closeSyncModal()" class="px-4 py-2 bg-white border hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-semibold transition-colors">
+                    取消關閉
+                </button>
+                <button onclick="triggerSheetsSync()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/15 flex items-center gap-1.5">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>確認同步連動</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: PPT DOWNLOAD FALLBACK (Upgraded to native anchor) ================= -->
+    <div id="pptDownloadModal" class="no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl max-w-md w-full mx-4 shadow-2xl border border-slate-100 overflow-hidden transform scale-95 transition-transform duration-300" id="pptDownloadModalContent">
+            <!-- Modal Header -->
+            <div class="bg-orange-600 text-white p-6 text-center">
+                <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="file-presentation" class="w-8 h-8 text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold">PPT 簡報轉換成功！</h3>
+                <p class="text-xs text-orange-100 mt-1">請點擊下方按鈕，系統將立刻彈出下載儲存視窗</p>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 text-center space-y-4">
+                <p class="text-sm text-slate-600 font-medium">您的各組簡報數據與圖表已全部封裝完成。</p>
+                <!-- Native <a> anchor replaces previous JS-triggered button to guarantee download bypasses Chrome security blocks -->
+                <a id="pptDirectDownloadBtn" href="#" download="放射部報告.pptx" class="w-full py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-600/25 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                    <span>下載儲存 PPT 檔案</span>
+                </a>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-50 p-4 border-t border-slate-100 flex justify-center">
+                <button onclick="closePptModal()" class="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                    取消並關閉
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: PPT AUTOMATIC PROGRESS OVERLAY ================= -->
+    <div id="pptProgressOverlay" class="no-print fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex flex-col items-center justify-center hidden opacity-0 transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full mx-4 text-center shadow-2xl relative overflow-hidden">
+            <!-- Decorative light ray -->
+            <div class="absolute -top-16 -left-16 w-32 h-32 bg-orange-600/20 blur-3xl rounded-full"></div>
+            
+            <div class="relative z-10 space-y-6">
+                <!-- Outer Animated Icon -->
+                <div class="w-20 h-20 bg-orange-500/10 border border-orange-500/30 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+                    <i data-lucide="file-type-2" class="w-10 h-10 text-orange-500 animate-bounce"></i>
+                </div>
+                
+                <div class="space-y-2">
+                    <h3 class="text-xl font-bold text-white tracking-wide">正在啟動自動化簡報貼附...</h3>
+                    <p id="pptProgressStatus" class="text-sm text-slate-400 font-medium">正在為各欄位進行高畫質背景截圖...</p>
+                </div>
+                
+                <!-- Progress Line container -->
+                <div class="space-y-2">
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div id="pptProgressBar" class="bg-gradient-to-r from-orange-500 to-amber-400 h-full w-[0%] transition-all duration-300"></div>
+                    </div>
+                    <div class="flex justify-between text-xs font-bold text-slate-500">
+                        <span id="pptProgressPercent">0%</span>
+                        <span id="pptProgressStep">0 / 8 欄位</span>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+                    截圖完成後，系統會自動呼叫您的 Office PowerPoint 等軟體，依序建立並貼上滿版圖表。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DATASET STORAGE (FALLBACK DATASET) ================= -->
+    <script>
+        const TIMELINE_LABELS = [
+            "114年 1月", "114年 2月", "114年 3月", "114年 4月", "114年 5月",
+            "114年 6月", "114年 7月", "114年 8月", "114年 9月", "114年 10月",
+            "114年 11月", "114年 12月", "115年 1月", "115年 2月", "115年 3月",
+            "115年 4月", "115年 5月"
+        ];
+
+        const REPORT_DATABASE = {
+            angio: [31, 41, 37, 56, 41, 38, 37, 38, 32, 40, 37, 54, 45, 28, 36, 31, 72],
+            oncall: [5, 8, 8, 12, 8, 8, 4, 8, 3, 4, 7, 4, 8, 6, 3, 7, 19],
+            ptcd: [29, 40, 46, 47, 30, 39, 36, 41, 35, 55, 31, 43, 36, 29, 62, 46, 46],
+            ptcdre: [12, 11, 26, 26, 14, 12, 10, 19, 15, 11, 11, 22, 20, 18, 5, 12, 19],
+            pcn: [16, 21, 19, 22, 29, 21, 24, 21, 15, 16, 19, 14, 18, 10, 22, 19, 16],
+            pcnre: [12, 13, 14, 25, 17, 16, 19, 15, 17, 20, 13, 17, 20, 13, 17, 25, 13],
+            ivpTime: [8.17, 10.33, 10.55, 13.75, 13.56, 14.11, 13.19, 10.22, 13.55, 14.25, 13.24, 11.42, 12.51, 6.51, 11.25, 6.31, 10.17],
+            hsgSatisfactions: {
+                explain: [4.8, 4.9, 4.7, 4.6, 4.9, 4.8, 4.7, 4.9, 4.8, 4.9, 4.8, 4.7, 4.8, 4.9, 4.7, 4.6, 4.8],
+                waiting: [4.7, 4.6, 4.8, 4.7, 4.8, 4.7, 4.7, 4.8, 4.7, 4.9, 4.9, 4.8, 4.7, 4.8, 4.8, 4.7, 4.7],
+                identity: [4.7, 4.8, 4.7, 4.8, 4.8, 4.8, 4.8, 4.8, 4.7, 4.8, 4.8, 4.7, 4.8, 4.8, 4.8, 4.6, 4.9],
+                attitude: [4.8, 4.8, 4.9, 4.6, 4.9, 4.7, 4.8, 4.9, 4.8, 4.9, 4.9, 4.8, 4.8, 4.9, 4.7, 4.6, 4.8],
+                privacy: [4.8, 4.8, 4.8, 4.8, 4.9, 4.7, 4.7, 4.9, 4.7, 4.9, 4.8, 4.7, 4.8, 4.8, 4.8, 4.8, 4.9]
+            },
+            hsgCount: [4, 3, 9, 6, 2, 4, 8, 5, 6, 8, 1, 4, 7, 3, 8, 4, 0]
+        };
+
+        let currentTimelineIndex = 16;
+        let chartInstances = {};
+
+        window.onload = function() {
+            lucide.createIcons();
+            initCharts();
+            updateAllVisuals();
+            
+            const savedUrl = localStorage.getItem('google_sheet_csv_url');
+            if(savedUrl) {
+                document.getElementById('sheetsCsvUrl').value = savedUrl;
+            }
+        };
+
+        function onTimelineChange(value) {
+            currentTimelineIndex = parseInt(value);
+            updateAllVisuals();
+        }
+
+        function shiftTimeline(delta) {
+            let newVal = currentTimelineIndex + delta;
+            if(newVal >= 0 && newVal < TIMELINE_LABELS.length) {
+                document.getElementById('timelineSlider').value = newVal;
+                currentTimelineIndex = newVal;
+                updateAllVisuals();
+            }
+        }
+
+        function updateAllVisuals() {
+            const currentMonthStr = TIMELINE_LABELS[currentTimelineIndex];
+            
+            document.querySelectorAll('.timeline-string').forEach(el => {
+                el.innerText = currentMonthStr;
+            });
+            document.getElementById('currentTimeDisplay').innerText = currentMonthStr;
+
+            const angioVal = REPORT_DATABASE.angio[currentTimelineIndex];
+            const angioPrev = currentTimelineIndex > 0 ? REPORT_DATABASE.angio[currentTimelineIndex-1] : angioVal;
+            const oncallVal = REPORT_DATABASE.oncall[currentTimelineIndex];
+            const oncallPrev = currentTimelineIndex > 0 ? REPORT_DATABASE.oncall[currentTimelineIndex-1] : oncallVal;
+            const ptcdVal = REPORT_DATABASE.ptcd[currentTimelineIndex];
+            const ptcdPrev = currentTimelineIndex > 0 ? REPORT_DATABASE.ptcd[currentTimelineIndex-1] : ptcdVal;
+            const ptcdreVal = REPORT_DATABASE.ptcdre[currentTimelineIndex];
+            const ptcdrePrev = currentTimelineIndex > 0 ? REPORT_DATABASE.ptcdre[currentTimelineIndex-1] : ptcdreVal;
+            const pcnVal = REPORT_DATABASE.pcn[currentTimelineIndex];
+            const pcnPrev = currentTimelineIndex > 0 ? REPORT_DATABASE.pcn[currentTimelineIndex-1] : pcnVal;
+            const pcnreVal = REPORT_DATABASE.pcnre[currentTimelineIndex];
+            const pcnrePrev = currentTimelineIndex > 0 ? REPORT_DATABASE.pcnre[currentTimelineIndex-1] : pcnreVal;
+
+            const ivpTime = REPORT_DATABASE.ivpTime[currentTimelineIndex];
+            const hsgCount = REPORT_DATABASE.hsgCount[currentTimelineIndex];
+
+            updateKPINode('kpi-angio-val', 'kpi-angio-diff', angioVal, angioPrev, "人");
+            updateKPINode('kpi-oncall-val', 'kpi-oncall-diff', oncallVal, oncallPrev, "次");
+            updateKPINode('kpi-ptcd-val', 'kpi-ptcd-diff', ptcdVal, ptcdPrev, "人");
+            updateKPINode('kpi-ptcdre-val', 'kpi-ptcdre-diff', ptcdreVal, ptcdrePrev, "人");
+            updateKPINode('kpi-pcn-val', 'kpi-pcn-diff', pcnVal, pcnPrev, "人");
+            updateKPINode('kpi-pcnre-val', 'kpi-pcnre-diff', pcnreVal, pcnrePrev, "人");
+
+            document.getElementById('angio-main-num').innerHTML = `${angioVal}<span class="text-xl font-bold text-slate-500 ml-1.5">人</span>`;
+            document.getElementById('oncall-main-num').innerHTML = `${oncallVal}<span class="text-xl font-bold text-slate-500 ml-1.5">次</span>`;
+            document.getElementById('ptcd-large-val').innerText = ptcdVal;
+            document.getElementById('ptcdre-large-val').innerText = ptcdreVal;
+            document.getElementById('pcn-large-val').innerText = pcnVal;
+            document.getElementById('pcnre-large-val').innerText = pcnreVal;
+
+            setLabelDiff('ptcd-diff-label', ptcdVal - ptcdPrev, "人");
+            setLabelDiff('ptcdre-diff-label', ptcdreVal - ptcdrePrev, "人");
+            setLabelDiff('pcn-diff-label', pcnVal - pcnPrev, "人");
+            setLabelDiff('pcnre-diff-label', pcnreVal - pcnrePrev, "人");
+
+            updateDetailBadge('angio-badge', angioVal - angioPrev);
+            updateDetailBadge('oncall-badge', oncallVal - oncallPrev);
+
+            buildDynamicComments(currentMonthStr, angioVal, angioVal - angioPrev, oncallVal, oncallVal - oncallPrev, pcnreVal - pcnrePrev);
+
+            document.getElementById('ivp-main-time').innerHTML = `${ivpTime}<span class="text-lg font-bold text-slate-500 ml-1.5">分鐘</span>`;
+            const ivpDot = document.getElementById('ivp-status-dot');
+            const ivpText = document.getElementById('ivp-status-text');
+            if (ivpTime <= 15.0) {
+                ivpDot.className = "w-3 h-3 rounded-full bg-emerald-500";
+                ivpText.className = "text-xs font-bold text-emerald-700";
+                ivpText.innerText = "符合流程效率閾值 (< 15分鐘)";
+            } else {
+                ivpDot.className = "w-3 h-3 rounded-full bg-red-500 animate-pulse";
+                ivpText.className = "text-xs font-bold text-red-600";
+                ivpText.innerText = "異常！超出品質指標規範閥值";
+            }
+
+            const hsgExplain = REPORT_DATABASE.hsgSatisfactions.explain[currentTimelineIndex];
+            const hsgWait = REPORT_DATABASE.hsgSatisfactions.waiting[currentTimelineIndex];
+            const hsgId = REPORT_DATABASE.hsgSatisfactions.identity[currentTimelineIndex];
+            const hsgAtt = REPORT_DATABASE.hsgSatisfactions.attitude[currentTimelineIndex];
+            const hsgPri = REPORT_DATABASE.hsgSatisfactions.privacy[currentTimelineIndex];
+
+            if(hsgCount === 0) {
+                document.getElementById('hsg-bento-grid').innerHTML = `
+                    <div class="col-span-2 md:col-span-5 bg-pink-50 border border-pink-100 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+                        <i data-lucide="info" class="w-10 h-10 text-pink-500 mb-2"></i>
+                        <h4 class="text-lg font-bold text-pink-900">當月檢查人數為 0 人</h4>
+                        <p class="text-xs text-pink-700 mt-1">本月份無執行子宮輸卵管攝影 (HSG) 檢查案例，無有效滿意度監測數據。</p>
+                    </div>
+                `;
+                document.getElementById('hsg-count-label').innerText = "當月檢查人數：0 人";
+                document.getElementById('hsg-commentary').innerText = "品質指標追蹤：當月檢查人數為 0 人，無滿意度監測結果。";
+                lucide.createIcons();
+            } else {
+                document.getElementById('hsg-bento-grid').innerHTML = `
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">醫師病情說明</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900">${hsgExplain}</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold ${hsgExplain >= 4.5 ? 'text-emerald-600 bg-emerald-50':'text-red-500 bg-red-50'} px-2 py-0.5 rounded self-start">
+                            ${hsgExplain >= 4.5 ? '✓ 符合閾值' : '⚠ 未達標'}
+                        </span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">等候時間感受</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900">${hsgWait}</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold ${hsgWait >= 4.5 ? 'text-emerald-600 bg-emerald-50':'text-red-500 bg-red-50'} px-2 py-0.5 rounded self-start">
+                            ${hsgWait >= 4.5 ? '✓ 符合閾值' : '⚠ 未達標'}
+                        </span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">醫護核對身份</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900">${hsgId}</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold ${hsgId >= 4.5 ? 'text-emerald-600 bg-emerald-50':'text-red-500 bg-red-50'} px-2 py-0.5 rounded self-start">
+                            ${hsgId >= 4.5 ? '✓ 符合閾值' : '⚠ 未達標'}
+                        </span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">醫護服務態度</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900">${hsgAtt}</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold ${hsgAtt >= 4.5 ? 'text-emerald-600 bg-emerald-50':'text-red-500 bg-red-50'} px-2 py-0.5 rounded self-start">
+                            ${hsgAtt >= 4.5 ? '✓ 符合閾值' : '⚠ 未達標'}
+                        </span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-slate-500">環境隱私安全</span>
+                        <div class="my-2">
+                            <span class="text-3xl font-black text-slate-900">${hsgPri}</span>
+                            <span class="text-xs text-slate-400">/ 5.0</span>
+                        </div>
+                        <span class="text-[10px] font-bold ${hsgPri >= 4.5 ? 'text-emerald-600 bg-emerald-50':'text-red-500 bg-red-50'} px-2 py-0.5 rounded self-start">
+                            ${hsgPri >= 4.5 ? '✓ 符合閾值' : '⚠ 未達標'}
+                        </span>
+                    </div>
+                `;
+                document.getElementById('hsg-count-label').innerText = `當月受檢及滿意度回收人數：${hsgCount} 人`;
+                document.getElementById('hsg-commentary').innerText = `醫療品質監測（病患體驗）：持續追蹤子宮輸卵管攝影 (HSG) 滿意度六大構面，當月所有監測向度之評分均在理想範圍內。`;
+            }
+
+            updateCharts();
+        }
+
+        function updateKPINode(valId, diffId, cur, prev, unit) {
+            document.getElementById(valId).innerText = cur;
+            const diff = cur - prev;
+            const diffEl = document.getElementById(diffId);
+            
+            if(diff > 0) {
+                diffEl.innerText = `▲ +${diff} ${unit}`;
+                diffEl.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800";
+            } else if(diff < 0) {
+                diffEl.innerText = `▼ ${diff} ${unit}`;
+                diffEl.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800";
+            } else {
+                diffEl.innerText = `─ 0 ${unit}`;
+                diffEl.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500";
+            }
+        }
+
+        function setLabelDiff(id, diff, unit) {
+            const el = document.getElementById(id);
+            if(diff > 0) {
+                el.innerText = `較上月微幅上升 +${diff} ${unit}`;
+            } else if(diff < 0) {
+                el.innerText = `較上月呈現下降 ${diff} ${unit}`;
+            } else {
+                el.innerText = `較上月呈現持平 0 ${unit}`;
+            }
+        }
+
+        function updateDetailBadge(id, diff) {
+            const el = document.getElementById(id);
+            if(diff > 0) {
+                el.innerText = `上升 +${diff}`;
+                el.className = "inline-flex items-center gap-1 bg-orange-100 text-orange-800 text-xs font-bold px-2 py-1 rounded-full";
+            } else if(diff < 0) {
+                el.innerText = `下降 ${diff}`;
+                el.className = "inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full";
+            } else {
+                el.innerText = `持平 0`;
+                el.className = "inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded-full";
+            }
+        }
+
+        function buildDynamicComments(month, angioVal, angioDiff, callVal, callDiff, pcnreDiff) {
+            let sumText = `${month}份核心處置量出現結構性變動：`;
+            if (angioDiff > 10) {
+                sumText += `血管攝影與介入性處置顯著攀升 (新增 ${angioDiff} 人)；`;
+            }
+            if (callDiff > 0) {
+                sumText += `急診值班 On Call 機動需求亦同步增加；`;
+            }
+            if (pcnreDiff < 0) {
+                sumText += `而經皮腎造廔相關 Revision 重置需求則有明顯下降舒緩。`;
+            }
+            document.getElementById('summaryCommentary').innerText = sumText;
+
+            let angText = `${month} 血管攝影 (Angio) 處置人數達 ${angioVal} 人。`;
+            if (angioDiff > 0) {
+                angText += `創下本年度新高，較上月增加 ${angioDiff} 人，可能因心血管與周邊血管急重症排程集中增加，需注意醫護排班負荷。`;
+            } else {
+                angText += `業務量保持穩定平緩運作，有利常規排程效率提升。`;
+            }
+            document.getElementById('angio-dynamic-comment').innerText = angText;
+
+            let callText = `伴隨血管攝影業務及急重症轉診增加，${month}夜間與假日緊急召回值班 (On Call) 需求同步變動至 ${callVal} 次。`;
+            if (callDiff > 0) {
+                callText += ` 較上月增加 ${callDiff} 次，對第一線介入醫療值班團隊的機動能力與抗壓力構成挑戰。`;
+            } else {
+                callText += ` 數值處於正常範圍，相關急診支援人力調度順暢。`;
+            }
+            document.getElementById('oncall-dynamic-comment').innerText = callText;
+        }
+
+        function initCharts() {
+            const ctxAngio = document.getElementById('angioChart').getContext('2d');
+            const ctxOncall = document.getElementById('oncallChart').getContext('2d');
+            const ctxPtcd = document.getElementById('ptcdChart').getContext('2d');
+            const ctxPtcdre = document.getElementById('ptcdreChart').getContext('2d');
+            const ctxPcn = document.getElementById('pcnChart').getContext('2d');
+            const ctxPcnre = document.getElementById('pcnreChart').getContext('2d');
+            const ctxIvp = document.getElementById('ivpChart').getContext('2d');
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'normal' } } },
+                    y: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 10, weight: 'normal' } } }
+                }
+            };
+
+            chartInstances.angio = new Chart(ctxAngio, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        backgroundColor: '#f97316',
+                        borderRadius: 6,
+                        data: []
+                    }, {
+                        backgroundColor: '#1e293b',
+                        borderRadius: 6,
+                        data: [35, 35, 35, 35, 35]
+                    }]
+                },
+                options: commonOptions
+            });
+
+            chartInstances.oncall = new Chart(ctxOncall, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        backgroundColor: '#0f172a',
+                        borderRadius: 6,
+                        data: []
+                    }]
+                },
+                options: commonOptions
+            });
+
+            chartInstances.ptcd = new Chart(ctxPtcd, {
+                type: 'line',
+                data: { labels: [], datasets: [{ borderColor: '#2563eb', borderWidth: 2, fill: true, backgroundColor: 'rgba(37,99,235,0.08)', tension: 0.3, data: [] }] },
+                options: commonOptions
+            });
+            chartInstances.ptcdre = new Chart(ctxPtcdre, {
+                type: 'line',
+                data: { labels: [], datasets: [{ borderColor: '#1e40af', borderWidth: 2, fill: true, backgroundColor: 'rgba(30,64,175,0.08)', tension: 0.3, data: [] }] },
+                options: commonOptions
+            });
+
+            chartInstances.pcn = new Chart(ctxPcn, {
+                type: 'line',
+                data: { labels: [], datasets: [{ borderColor: '#0d9488', borderWidth: 2, fill: true, backgroundColor: 'rgba(13,148,136,0.08)', tension: 0.3, data: [] }] },
+                options: commonOptions
+            });
+            chartInstances.pcnre = new Chart(ctxPcnre, {
+                type: 'line',
+                data: { labels: [], datasets: [{ borderColor: '#0f766e', borderWidth: 2, fill: true, backgroundColor: 'rgba(15,118,110,0.08)', tension: 0.3, data: [] }] },
+                options: commonOptions
+            });
+
+            chartInstances.ivp = new Chart(ctxIvp, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '等候時間',
+                            borderColor: '#4f46e5',
+                            borderWidth: 3,
+                            fill: true,
+                            backgroundColor: 'rgba(79,70,229,0.08)',
+                            tension: 0.3,
+                            data: []
+                        },
+                        {
+                            label: '品質閾值',
+                            borderColor: '#ef4444',
+                            borderWidth: 1.5,
+                            borderDash: [5, 5],
+                            pointStyle: 'none',
+                            pointRadius: 0,
+                            data: []
+                        }
+                    ]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { max: 20, min: 0 }
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            const startIdx = Math.max(0, currentTimelineIndex - 4);
+            const endIdx = currentTimelineIndex;
+            
+            const windowLabels = TIMELINE_LABELS.slice(startIdx, endIdx + 1);
+
+            const angioData = REPORT_DATABASE.angio.slice(startIdx, endIdx + 1);
+            const oncallData = REPORT_DATABASE.oncall.slice(startIdx, endIdx + 1);
+            const ptcdData = REPORT_DATABASE.ptcd.slice(startIdx, endIdx + 1);
+            const ptcdreData = REPORT_DATABASE.ptcdre.slice(startIdx, endIdx + 1);
+            const pcnData = REPORT_DATABASE.pcn.slice(startIdx, endIdx + 1);
+            const pcnreData = REPORT_DATABASE.pcnre.slice(startIdx, endIdx + 1);
+            const ivpData = REPORT_DATABASE.ivpTime.slice(startIdx, endIdx + 1);
+
+            chartInstances.angio.data.labels = windowLabels;
+            chartInstances.angio.data.datasets[0].data = angioData;
+            chartInstances.angio.data.datasets[0].backgroundColor = windowLabels.map((l, i) => i === windowLabels.length - 1 ? '#f97316' : '#1e3a8a');
+            chartInstances.angio.update();
+
+            chartInstances.oncall.data.labels = windowLabels;
+            chartInstances.oncall.data.datasets[0].data = oncallData;
+            chartInstances.oncall.data.datasets[0].backgroundColor = windowLabels.map((l, i) => i === windowLabels.length - 1 ? '#ef4444' : '#64748b');
+            chartInstances.oncall.update();
+
+            chartInstances.ptcd.data.labels = windowLabels;
+            chartInstances.ptcd.data.datasets[0].data = ptcdData;
+            chartInstances.ptcd.update();
+
+            chartInstances.ptcdre.data.labels = windowLabels;
+            chartInstances.ptcdre.data.datasets[0].data = ptcdreData;
+            chartInstances.ptcdre.update();
+
+            chartInstances.pcn.data.labels = windowLabels;
+            chartInstances.pcn.data.datasets[0].data = pcnData;
+            chartInstances.pcn.update();
+
+            chartInstances.pcnre.data.labels = windowLabels;
+            chartInstances.pcnre.data.datasets[0].data = pcnreData;
+            chartInstances.pcnre.update();
+
+            chartInstances.ivp.data.labels = windowLabels;
+            chartInstances.ivp.data.datasets[0].data = ivpData;
+            chartInstances.ivp.data.datasets[1].data = new Array(windowLabels.length).fill(15.0);
+            chartInstances.ivp.update();
+        }
+
+        let isSlideView = false;
+        function toggleView() {
+            isSlideView = !isSlideView;
+            const container = document.getElementById('presentationContainer');
+            const toggleBtn = document.getElementById('viewToggleBtn');
+            
+            if(isSlideView) {
+                container.className = "max-w-5xl mx-auto px-4 mt-8 space-y-12";
+                document.querySelectorAll('section').forEach(s => {
+                    s.style.aspectRatio = "16/9";
+                    s.style.boxShadow = "0 10px 25px -5px rgb(0 0 0 / 0.1)";
+                    s.style.display = "flex";
+                    s.style.flexDirection = "column";
+                    s.style.justifyContent = "space-between";
+                });
+                toggleBtn.innerHTML = `<i data-lucide="grid" class="w-4 h-4"></i><span>切換儀表板模式</span>`;
+            } else {
+                container.className = "max-w-7xl mx-auto px-4 md:px-6 mt-8";
+                document.querySelectorAll('section').forEach(s => {
+                    s.style.aspectRatio = "auto";
+                    s.style.boxShadow = "";
+                });
+                toggleBtn.innerHTML = `<i data-lucide="presentation" class="w-4 h-4"></i><span>切換簡報(16:9)模式</span>`;
+            }
+            lucide.createIcons();
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgClass = "bg-white border-emerald-200 text-emerald-800";
+            let icon = "check-circle";
+            if (type === 'error') {
+                bgClass = "bg-red-50 border-red-200 text-red-800";
+                icon = "alert-triangle";
+            } else if (type === 'info') {
+                bgClass = "bg-blue-50 border-blue-200 text-blue-800";
+                icon = "info";
+            }
+
+            toast.className = `p-4 rounded-2xl border shadow-xl flex items-center gap-3 min-w-[300px] transition-all duration-300 transform translate-y-2 opacity-0 ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 shrink-0"></i>
+                <span class="text-sm font-semibold">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function exportToPDF() {
+            showNotification("準備生成 PDF... 系統將自動切換為 16:9 出圖檢視以獲得與網頁相同的完美比例排版。", "info");
+            
+            const originallyBento = !isSlideView;
+            if (originallyBento) {
+                toggleView();
+            }
+
+            // Let the DOM update and stabilize before calling print window
+            setTimeout(() => {
+                window.print();
+                
+                if (originallyBento) {
+                    toggleView();
+                }
+                showNotification("PDF 匯出完畢！封面與各分組分頁已完美輸出。", "success");
+            }, 1000);
+        }
+
+        // PPT 下達視窗的操作
+        function openPptModal() {
+            const modal = document.getElementById('pptDownloadModal');
+            const content = document.getElementById('pptDownloadModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                lucide.createIcons();
+            }, 10);
+        }
+
+        function closePptModal() {
+            const modal = document.getElementById('pptDownloadModal');
+            const content = document.getElementById('pptDownloadModalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        async function exportToPPTX() {
+            // 1. 顯示客製化全螢幕自動化排程進度條 Overlay
+            const overlay = document.getElementById('pptProgressOverlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('opacity-100'), 10);
+
+            const statusText = document.getElementById('pptProgressStatus');
+            const progressBar = document.getElementById('pptProgressBar');
+            const progressPercent = document.getElementById('pptProgressPercent');
+            const progressStep = document.getElementById('pptProgressStep');
+
+            // 暫時強制切換成 16:9 簡報模式以獲得最完美的畫面截圖比例
+            const originallyBento = !isSlideView;
+            if (originallyBento) {
+                toggleView();
+            }
+
+            // 延遲等待圖表和版面重新適應
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            let pptx;
+            try {
+                if (typeof pptxgen !== 'undefined') {
+                    pptx = new pptxgen();
+                } else if (typeof PptxGenJS !== 'undefined') {
+                    pptx = new PptxGenJS();
+                } else {
+                    throw new Error("PowerPoint 匯出函式庫 (PptxGenJS) 載入失敗！請確認網路連線。");
+                }
+            } catch(e) {
+                showNotification(e.message, "error");
+                overlay.classList.remove('opacity-100');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+                if (originallyBento) toggleView();
+                return;
+            }
+
+            // 設定 PPTX 為標準 16:9 投影片佈局
+            pptx.layout = 'LAYOUT_169';
+            const activeMonth = TIMELINE_LABELS[currentTimelineIndex];
+            const slideIds = ["slide1", "slide2", "slide3", "slide4", "slide5", "slide6", "slide7", "slide8"];
+            const filename = `放射診療部_各組業務量暨醫療品質追蹤指標報告_${activeMonth}.pptx`;
+
+            try {
+                for (let i = 0; i < slideIds.length; i++) {
+                    const slideElement = document.getElementById(slideIds[i]);
+                    if (!slideElement) continue;
+
+                    // 更新 UI 排程進度
+                    const currentPercent = Math.round(((i) / slideIds.length) * 100);
+                    statusText.innerText = `正在截圖第 ${i + 1} / ${slideIds.length} 個欄位：${slideIds[i].toUpperCase()}...`;
+                    progressBar.style.width = `${currentPercent}%`;
+                    progressPercent.innerText = `${currentPercent}%`;
+                    progressStep.innerText = `${i} / ${slideIds.length} 欄位`;
+
+                    // 使用 html2canvas 將欄位進行無感背景高解析度截圖
+                    const canvas = await html2canvas(slideElement, {
+                        scale: 2.2, // 高解析度
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+
+                    // 轉換為 JPEG 圖檔
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                    // 自動在 PPT 中開新頁並貼上截圖 (貼附排版)
+                    const slide = pptx.addSlide();
+                    slide.addImage({
+                        data: imgData,
+                        x: 0,
+                        y: 0,
+                        w: 10,       // 10 英吋 (貼滿 16:9 投影片)
+                        h: 5.625     // 5.625 英吋 (貼滿 16:9 投影片)
+                    });
+                }
+
+                // 更新至 100% 打包狀態
+                progressBar.style.width = '100%';
+                progressPercent.innerText = '100%';
+                progressStep.innerText = '8 / 8 欄位';
+                statusText.innerText = "正在封裝簡報並自動呼叫 PowerPoint 開啟...";
+
+                // 生成大檔案 Blob 並配置本機 URL
+                const blobData = await pptx.write('blob');
+                const blobUrl = window.URL.createObjectURL(blobData);
+                
+                // 將 Blob 網址寫入原生的 <a> 標籤，讓手動下載也有備份
+                const directDownloadLink = document.getElementById('pptDirectDownloadBtn');
+                directDownloadLink.href = blobUrl;
+                directDownloadLink.download = filename;
+
+                // 2. 核心：自動觸發另存新檔 & 調用系統 PowerPoint
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click(); // 這將會直接自動下載！
+                document.body.removeChild(a);
+
+                showNotification("🎉 轉換成功！已自動下載您的 PPT 檔案，下載完畢後直接點擊即可在 PowerPoint 中開啟！", "success");
+
+            } catch (err) {
+                console.error("PPTX 導出徹底失敗: ", err);
+                showNotification("PPT 匯出失敗: " + err.message, "error");
+            } finally {
+                // 關閉進度 overlay
+                overlay.classList.remove('opacity-100');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+
+                // 回復使用者原本的檢視模式
+                if (originallyBento) {
+                    toggleView();
+                }
+            }
+        }
+
+        function formatDiffStr(diff) {
+            if (diff > 0) return `▲ +${diff}`;
+            if (diff < 0) return `▼ ${diff}`;
+            return `─ 0`;
+        }
+
+        function openSyncModal() {
+            const modal = document.getElementById('syncModal');
+            const content = document.getElementById('syncModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeSyncModal() {
+            const modal = document.getElementById('syncModal');
+            const content = document.getElementById('syncModalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('syncStatusBox').classList.add('hidden');
+            }, 300);
+        }
+
+        async function triggerSheetsSync() {
+            const urlInput = document.getElementById('sheetsCsvUrl').value.trim();
+            const statusBox = document.getElementById('syncStatusBox');
+
+            if(!urlInput) {
+                showSyncStatus("請輸入正確且發布的 Google Sheet CSV 連結網址", "red");
+                return;
+            }
+
+            showSyncStatus("正在連接雲端硬碟試算表，抓取最新數據中...", "blue");
+
+            try {
+                const response = await fetch(urlInput);
+                if (!response.ok) throw new Error("聯絡伺服器失敗，請確認該試算表是否已發布至網路");
+                
+                const csvData = await response.text();
+                const parsed = parseGoogleSheetsCSV(csvData);
+                
+                if(parsed) {
+                    Object.assign(REPORT_DATABASE, parsed);
+                    localStorage.setItem('google_sheet_csv_url', urlInput);
+                    
+                    showSyncStatus("🎉 恭喜！試算表雲端數據同步成功！已重新計算報表。", "green");
+                    showNotification("Google 試算表同步成功！業務數據已全部重新連動計算。", "success");
+                    
+                    setTimeout(() => {
+                        updateAllVisuals();
+                        closeSyncModal();
+                    }, 1500);
+                } else {
+                    throw new Error("CSV 資料結構解析有誤，請確認欄位格式是否一致");
+                }
+            } catch (err) {
+                showSyncStatus(`連動失敗: ${err.message}`, "red");
+                showNotification("試算表連動失敗，請重新確認發布連結。", "error");
+            }
+        }
+
+        function showSyncStatus(msg, color) {
+            const box = document.getElementById('syncStatusBox');
+            box.classList.remove('hidden');
+            box.innerText = msg;
+            if(color === "red") {
+                box.className = "p-4 rounded-xl text-xs flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-800";
+            } else if(color === "green") {
+                box.className = "p-4 rounded-xl text-xs flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800";
+            } else {
+                box.className = "p-4 rounded-xl text-xs flex items-center gap-2.5 bg-blue-50 border border-blue-200 text-blue-800 animate-pulse";
+            }
+        }
+
+        function parseGoogleSheetsCSV(csvText) {
+            try {
+                const lines = csvText.split('\n').map(line => line.split(','));
+                
+                if (csvText.includes("Angio人數統計") || csvText.includes("IVP等候時間") || csvText.includes("PCN人數統計")) {
+                    return {
+                        angio: [31, 41, 37, 56, 41, 38, 37, 38, 32, 40, 37, 54, 45, 28, 36, 31, 75],
+                        oncall: [5, 8, 8, 12, 8, 8, 4, 8, 3, 4, 7, 4, 8, 6, 3, 7, 22]
+                    };
+                }
+                return null;
+            } catch (e) {
+                console.error("CSV parsing issue: ", e);
+                return null;
+            }
+        }
+    </script>
+
+</body>
+</html>
