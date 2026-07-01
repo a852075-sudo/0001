@@ -145,6 +145,10 @@
                     <i data-lucide="database" class="w-4 h-4 text-emerald-600"></i>
                     <span>Google 試算表同步</span>
                 </button>
+                <button onclick="syncFromSavedSheet(true)" class="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span>立即更新</span>
+                </button>
                 <button onclick="toggleView()" id="viewToggleBtn" class="flex items-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2 rounded-xl text-sm font-semibold transition-all">
                     <i data-lucide="presentation" class="w-4 h-4"></i>
                     <span>切換簡報(16:9)模式</span>
@@ -183,6 +187,7 @@
                     <span id="timelineEndLabel">115年 5月</span>
                 </div>
             </div>
+            <div id="syncStateLabel" class="mt-3 text-xs font-semibold text-slate-400">資料來源：內建備援資料，開啟後將自動同步 Google 試算表。</div>
         </div>
     </header>
 
@@ -336,7 +341,7 @@
                     <!-- PCN Card -->
                     <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
                         <div>
-                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PCN 腎造廔</span>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PCN 腎造瘻</span>
                             <div class="flex items-baseline gap-1 mt-2">
                                 <span class="text-3xl font-black text-slate-900" id="kpi-pcn-val">16</span>
                                 <span class="text-xs font-bold text-slate-500">人</span>
@@ -351,7 +356,7 @@
                     <!-- PCN-Re Card -->
                     <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between transition-all hover:shadow-md">
                         <div>
-                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PCN-Re 腎造廔重置</span>
+                            <span class="text-xs font-extrabold text-slate-500 tracking-wider">PCN-Re 腎造瘻重置</span>
                             <div class="flex items-baseline gap-1 mt-2">
                                 <span class="text-3xl font-black text-slate-900" id="kpi-pcnre-val">13</span>
                                 <span class="text-xs font-bold text-slate-500">人</span>
@@ -364,9 +369,32 @@
                     </div>
                 </div>
 
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
+                    <div class="bg-slate-950 text-white rounded-2xl p-4">
+                        <span class="text-[11px] font-extrabold text-slate-400 tracking-wider">核心介入總量</span>
+                        <div class="mt-1 text-3xl font-black" id="analysis-total-volume">185</div>
+                        <p class="text-xs text-slate-300 mt-1" id="analysis-total-note">六項核心處置合計</p>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                        <span class="text-[11px] font-extrabold text-emerald-700 tracking-wider">月變化</span>
+                        <div class="mt-1 text-2xl font-black text-emerald-900" id="analysis-mom">+45</div>
+                        <p class="text-xs text-emerald-700 mt-1" id="analysis-mom-note">較上月核心總量</p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                        <span class="text-[11px] font-extrabold text-blue-700 tracking-wider">年同期</span>
+                        <div class="mt-1 text-2xl font-black text-blue-900" id="analysis-yoy">+32</div>
+                        <p class="text-xs text-blue-700 mt-1" id="analysis-yoy-note">較去年同月</p>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4">
+                        <span class="text-[11px] font-extrabold text-rose-700 tracking-wider">品質警示</span>
+                        <div class="mt-1 text-2xl font-black text-rose-900" id="analysis-quality">0 項</div>
+                        <p class="text-xs text-rose-700 mt-1" id="analysis-quality-note">IVP/HSG 閾值監測</p>
+                    </div>
+                </div>
+
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
                     <span>各檢查處置 analysis數據</span>
-                    <span>115年 5月彙整</span>
+                    <span><span class="timeline-string">115年 5月</span>彙整</span>
                 </div>
             </div>
         </section>
@@ -409,7 +437,7 @@
 
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 mt-4">
                     <span>血管攝影檢查室報告</span>
-                    <span>115年 5月</span>
+                    <span class="timeline-string">115年 5月</span>
                 </div>
             </div>
         </section>
@@ -424,7 +452,7 @@
                         <div>
                             <span class="text-xs font-bold text-slate-500 tracking-wider">SECTION 02 / 值班召回</span>
                             <h3 class="text-2xl md:text-3xl font-black text-slate-900 mt-1 mb-2">值班 On Call 人數統計</h3>
-                            <p class="text-slate-400 text-xs mb-4">急診介入治療機動值班召回次數監測</p>
+                            <p class="text-slate-400 text-xs mb-4">機動值班召回次數監測</p>
                             
                             <div class="my-4 flex flex-col gap-2">
                                 <div class="text-6xl font-black text-slate-900 tracking-tight leading-none" id="oncall-main-num">19<span class="text-2xl font-bold text-slate-500 ml-1">次</span></div>
@@ -451,7 +479,7 @@
 
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 mt-4">
                     <span>血管攝影On Call統計</span>
-                    <span>115年 5月</span>
+                    <span class="timeline-string">115年 5月</span>
                 </div>
             </div>
         </section>
@@ -492,7 +520,7 @@
                     <!-- Right: PTCD-Re (Revision) -->
                     <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="text-sm font-bold text-slate-700">PTCD-Re (重置與修改)</span>
+                            <span class="text-sm font-bold text-slate-700">PTCD-Re (重置)</span>
                             <span class="text-xs font-semibold text-slate-500 bg-white border px-2.5 py-0.5 rounded-md" id="ptcdre-diff-label">微增 +7</span>
                         </div>
                         <div class="flex items-baseline gap-1 mb-2">
@@ -507,7 +535,7 @@
 
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
                     <span>PTCD + PTGBD + PTCD-Re</span>
-                    <span>115年 5月</span>
+                    <span class="timeline-string">115年 5月</span>
                 </div>
             </div>
         </section>
@@ -519,13 +547,13 @@
                 <div>
                     <div class="flex justify-between items-start mb-2">
                         <div>
-                            <span class="text-xs font-bold text-teal-600 tracking-wider">SECTION 03 / 經皮腎造廔室</span>
-                            <h3 class="text-2xl font-black text-slate-900 mt-1">腎造廔處置業務量分析 (PCN)</h3>
+                            <span class="text-xs font-bold text-teal-600 tracking-wider">SECTION 03 / 經皮腎臟造瘻引流術</span>
+                            <h3 class="text-2xl font-black text-slate-900 mt-1">經皮腎臟造瘻引流術業務量分析 (PCN)</h3>
                         </div>
                         <span class="bg-teal-50 text-teal-700 text-xs px-3 py-1 rounded-full font-bold timeline-string">115年 5月</span>
                     </div>
                     <p class="text-slate-600 text-sm md:text-base mb-4 font-medium" id="pcn-commentary">
-                        腎造廔處置業務量 analysis：相關處置量於本月呈現全面舒緩，特別是重置需求 (Revision) 較上月大幅下降近一半。
+                        經皮腎臟造瘻引流術業務量 analysis：相關處置量於本月呈現全面舒緩，特別是重置需求 (Revision) 較上月大幅下降近一半。
                     </p>
                 </div>
 
@@ -548,7 +576,7 @@
                     <!-- Right: PCN-Re -->
                     <div class="bg-slate-50/70 p-5 rounded-2xl border border-slate-100">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="text-sm font-bold text-slate-700">PCN-Re (重置修補)</span>
+                            <span class="text-sm font-bold text-slate-700">PCN-Re (重置)</span>
                             <span class="text-xs font-semibold text-slate-500 bg-white border px-2.5 py-0.5 rounded-md" id="pcnre-diff-label">顯著下降 -12</span>
                         </div>
                         <div class="flex items-baseline gap-1 mb-2">
@@ -563,7 +591,7 @@
 
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
                     <span>PCN + PCN-Re</span>
-                    <span>115年 5月</span>
+                    <span class="timeline-string">115年 5月</span>
                 </div>
             </div>
         </section>
@@ -612,7 +640,7 @@
 
                 <div class="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100">
                     <span>IVP 等候時間</span>
-                    <span>115年 5月</span>
+                    <span class="timeline-string">115年 5月</span>
                 </div>
             </div>
         </section>
@@ -757,7 +785,7 @@
             <!-- Modal Header -->
             <div class="bg-orange-600 text-white p-6 text-center">
                 <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i data-lucide="file-presentation" class="w-8 h-8 text-white"></i>
+                    <i data-lucide="presentation" class="w-8 h-8 text-white"></i>
                 </div>
                 <h3 class="text-xl font-bold">PPT 簡報轉換成功！</h3>
                 <p class="text-xs text-orange-100 mt-1">請點擊下方按鈕，系統將立刻彈出下載儲存視窗</p>
@@ -855,6 +883,7 @@
             
             const savedUrl = localStorage.getItem('google_sheet_csv_url');
             document.getElementById('sheetsCsvUrl').value = savedUrl || DEFAULT_GOOGLE_SHEET_CSV_URL;
+            syncFromSavedSheet(false);
         };
 
         function onTimelineChange(value) {
@@ -918,6 +947,7 @@
 
             const ivpTime = REPORT_DATABASE.ivpTime[currentTimelineIndex];
             const hsgCount = REPORT_DATABASE.hsgCount[currentTimelineIndex];
+            updateBusinessAnalysis(currentTimelineIndex);
 
             updateKPINode('kpi-angio-val', 'kpi-angio-diff', angioVal, angioPrev, "人");
             updateKPINode('kpi-oncall-val', 'kpi-oncall-diff', oncallVal, oncallPrev, "次");
@@ -1031,6 +1061,68 @@
             }
 
             updateCharts();
+        }
+
+        function getCoreVolumeAt(index) {
+            if (index < 0 || index >= TIMELINE_LABELS.length) return null;
+            const keys = ['angio', 'oncall', 'ptcd', 'ptcdre', 'pcn', 'pcnre'];
+            return keys.reduce((sum, key) => sum + parseNumber(REPORT_DATABASE[key]?.[index], 0), 0);
+        }
+
+        function getPreviousYearIndex(index) {
+            const label = TIMELINE_LABELS[index] || '';
+            const match = label.match(/(\d{2,4})\s*年\s*(\d{1,2})\s*月/);
+            if (!match) return -1;
+            const previousYearLabel = `${parseInt(match[1], 10) - 1}年 ${parseInt(match[2], 10)}月`;
+            return TIMELINE_LABELS.indexOf(previousYearLabel);
+        }
+
+        function formatSigned(value) {
+            if (value === null || value === undefined) return '無資料';
+            if (value > 0) return `+${value}`;
+            return `${value}`;
+        }
+
+        function updateAnalysisDelta(id, noteId, value, positiveClass, negativeClass) {
+            const el = document.getElementById(id);
+            const note = document.getElementById(noteId);
+            if (!el || !note) return;
+
+            el.innerText = formatSigned(value);
+            const base = "mt-1 text-2xl font-black ";
+            if (value === null || value === undefined) {
+                el.className = base + "text-slate-500";
+            } else if (value >= 0) {
+                el.className = base + positiveClass;
+            } else {
+                el.className = base + negativeClass;
+            }
+        }
+
+        function updateBusinessAnalysis(index) {
+            const currentTotal = getCoreVolumeAt(index);
+            const prevTotal = getCoreVolumeAt(index - 1);
+            const yoyIndex = getPreviousYearIndex(index);
+            const yoyTotal = getCoreVolumeAt(yoyIndex);
+            const momDiff = prevTotal === null ? null : currentTotal - prevTotal;
+            const yoyDiff = yoyTotal === null ? null : currentTotal - yoyTotal;
+            const qualityAlerts = [];
+
+            if (parseNumber(REPORT_DATABASE.ivpTime[index], 0) > 15) qualityAlerts.push('IVP等候時間');
+            const hsgCount = parseNumber(REPORT_DATABASE.hsgCount[index], 0);
+            if (hsgCount > 0) {
+                const hsgValues = Object.values(REPORT_DATABASE.hsgSatisfactions).map(values => parseNumber(values[index], 0));
+                if (hsgValues.some(value => value < 4.5)) qualityAlerts.push('HSG滿意度');
+            }
+
+            document.getElementById('analysis-total-volume').innerText = currentTotal;
+            document.getElementById('analysis-total-note').innerText = `六項核心處置合計，時間點：${TIMELINE_LABELS[index]}`;
+            updateAnalysisDelta('analysis-mom', 'analysis-mom-note', momDiff, 'text-emerald-900', 'text-blue-900');
+            updateAnalysisDelta('analysis-yoy', 'analysis-yoy-note', yoyDiff, 'text-blue-900', 'text-orange-900');
+            document.getElementById('analysis-mom-note').innerText = prevTotal === null ? '缺少上月比較資料' : `較上月 ${TIMELINE_LABELS[index - 1]}`;
+            document.getElementById('analysis-yoy-note').innerText = yoyTotal === null ? '缺少去年同月資料' : `較去年同月 ${TIMELINE_LABELS[yoyIndex]}`;
+            document.getElementById('analysis-quality').innerText = `${qualityAlerts.length} 項`;
+            document.getElementById('analysis-quality-note').innerText = qualityAlerts.length ? qualityAlerts.join('、') : 'IVP/HSG 均符合閾值';
         }
 
         function updateKPINode(valId, diffId, cur, prev, unit) {
@@ -1525,31 +1617,52 @@
             showSyncStatus("正在連接雲端硬碟試算表，抓取最新數據中...", "blue");
 
             try {
-                const response = await fetch(urlInput);
-                if (!response.ok) throw new Error("聯絡伺服器失敗，請確認該試算表是否已發布至網路");
+                await loadSheetData(urlInput);
+                showSyncStatus(`恭喜！試算表雲端數據同步成功，時間軸已更新至 ${TIMELINE_LABELS[currentTimelineIndex]}。`, "green");
+                showNotification(`Google 試算表同步成功！時間軸已更新至 ${TIMELINE_LABELS[currentTimelineIndex]}。`, "success");
                 
-                const csvData = await response.text();
-                const parsed = parseGoogleSheetsCSV(csvData);
-                
-                if(parsed) {
-                    const { timelineLabels, ...reportData } = parsed;
-                    Object.assign(REPORT_DATABASE, reportData);
-                    applyTimelineLabels(timelineLabels);
-                    localStorage.setItem('google_sheet_csv_url', urlInput);
-                    
-                    showSyncStatus(`恭喜！試算表雲端數據同步成功，時間軸已更新至 ${TIMELINE_LABELS[currentTimelineIndex]}。`, "green");
-                    showNotification(`Google 試算表同步成功！時間軸已更新至 ${TIMELINE_LABELS[currentTimelineIndex]}。`, "success");
-                    
-                    setTimeout(() => {
-                        updateAllVisuals();
-                        closeSyncModal();
-                    }, 1500);
-                } else {
-                    throw new Error("CSV 資料結構解析有誤，請確認欄位格式是否一致");
-                }
+                setTimeout(() => {
+                    closeSyncModal();
+                }, 1500);
             } catch (err) {
                 showSyncStatus(`連動失敗: ${err.message}`, "red");
                 showNotification("試算表連動失敗，請重新確認發布連結。", "error");
+            }
+        }
+
+        async function syncFromSavedSheet(showToast = false) {
+            const url = (document.getElementById('sheetsCsvUrl')?.value || localStorage.getItem('google_sheet_csv_url') || DEFAULT_GOOGLE_SHEET_CSV_URL).trim();
+            const label = document.getElementById('syncStateLabel');
+            if (label) label.innerText = "資料來源：正在同步 Google 試算表最新資料...";
+
+            try {
+                await loadSheetData(url);
+                if (showToast) showNotification(`已更新至 ${TIMELINE_LABELS[currentTimelineIndex]}，共載入 ${TIMELINE_LABELS.length} 個月份。`, "success");
+            } catch (err) {
+                if (label) label.innerText = `資料來源：內建備援資料。自動同步失敗：${err.message}`;
+                if (showToast) showNotification(`同步失敗：${err.message}`, "error");
+            }
+        }
+
+        async function loadSheetData(urlInput) {
+            const response = await fetch(urlInput, { cache: "no-store" });
+            if (!response.ok) throw new Error("聯絡伺服器失敗，請確認該試算表是否已發布至網路");
+            
+            const csvData = await response.text();
+            const parsed = parseGoogleSheetsCSV(csvData);
+            if (!parsed) throw new Error("CSV 資料結構解析有誤，請確認欄位格式是否一致");
+
+            const { timelineLabels, ...reportData } = parsed;
+            Object.assign(REPORT_DATABASE, reportData);
+            applyTimelineLabels(timelineLabels);
+            localStorage.setItem('google_sheet_csv_url', urlInput);
+            updateAllVisuals();
+
+            const label = document.getElementById('syncStateLabel');
+            if (label) {
+                const now = new Date();
+                const timeText = now.toLocaleString('zh-TW', { hour12: false });
+                label.innerText = `資料來源：Google 試算表已同步｜${TIMELINE_LABELS[0]} 至 ${TIMELINE_LABELS[TIMELINE_LABELS.length - 1]}｜最後更新 ${timeText}`;
             }
         }
 
@@ -1814,7 +1927,6 @@
                 attitude: '服務態度',
                 privacy: '隱私安全'
             };
-            const startValue = labelSortValue(TIMELINE_LABELS[0] || '114年 1月');
             const valuesByMetric = {};
             const labels = new Set();
 
@@ -1838,7 +1950,6 @@
 
                     yearColumns.forEach(({ index, year }) => {
                         const label = `${year}年 ${month}月`;
-                        if (labelSortValue(label) < startValue) return;
                         const rawValue = row[index];
                         if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '' || String(rawValue).trim().toLowerCase() === 'none') return;
 
