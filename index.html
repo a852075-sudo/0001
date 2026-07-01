@@ -1680,6 +1680,7 @@
                 timelineLabels: labels,
                 hsgSatisfactions: {}
             };
+            const previousLabelIndexes = new Map(TIMELINE_LABELS.map((label, index) => [label, index]));
             const metricDefaults = {
                 angio: 0,
                 oncall: 0,
@@ -1692,11 +1693,17 @@
             };
 
             Object.entries(metricDefaults).forEach(([key, defaultValue]) => {
-                merged[key] = Array.from({ length }, (_, index) => REPORT_DATABASE[key]?.[index] ?? defaultValue);
+                merged[key] = labels.map(label => {
+                    const previousIndex = previousLabelIndexes.get(label);
+                    return previousIndex === undefined ? defaultValue : REPORT_DATABASE[key]?.[previousIndex] ?? defaultValue;
+                });
             });
 
             ['explain', 'waiting', 'identity', 'attitude', 'privacy'].forEach(key => {
-                merged.hsgSatisfactions[key] = Array.from({ length }, (_, index) => REPORT_DATABASE.hsgSatisfactions?.[key]?.[index] ?? 0);
+                merged.hsgSatisfactions[key] = labels.map(label => {
+                    const previousIndex = previousLabelIndexes.get(label);
+                    return previousIndex === undefined ? 0 : REPORT_DATABASE.hsgSatisfactions?.[key]?.[previousIndex] ?? 0;
+                });
             });
 
             return merged;
@@ -1789,12 +1796,102 @@
             return report;
         }
 
+        function parseSectionedYearMonthRows(rows) {
+            const sectionMap = {
+                angio: 'Angio人數統計',
+                oncall: 'Angio on call人數統計',
+                pcn: 'PCN人數統計',
+                pcnre: 'PCN-revision人數統計',
+                ptcd: 'PTCD+PTGBD人數統計',
+                ptcdre: 'PTCD-revision人數統計',
+                ivpTime: 'IVP等候時間',
+                hsgCount: 'HSG人數'
+            };
+            const hsgSectionMap = {
+                explain: '醫師說明',
+                waiting: '等候時間',
+                identity: '核對身份',
+                attitude: '服務態度',
+                privacy: '隱私安全'
+            };
+            const startValue = labelSortValue(TIMELINE_LABELS[0] || '114年 1月');
+            const valuesByMetric = {};
+            const labels = new Set();
+
+            const isMonthCell = value => /^\s*(?:[1-9]|1[0-2])\s*月\s*$/.test(String(value || ''));
+            const yearColumnsFromRow = row => row
+                .map((cell, index) => {
+                    const match = String(cell || '').trim().match(/^(\d{2,4})年$/);
+                    return match ? { index, year: parseInt(match[1], 10) } : null;
+                })
+                .filter(Boolean);
+
+            const readMetricBlock = (metricKey, headerRowIndex, firstDataRowIndex) => {
+                const yearColumns = yearColumnsFromRow(rows[headerRowIndex] || []);
+                if (yearColumns.length === 0) return;
+                if (!valuesByMetric[metricKey]) valuesByMetric[metricKey] = new Map();
+
+                for (let rowIndex = firstDataRowIndex; rowIndex < rows.length; rowIndex++) {
+                    const row = rows[rowIndex] || [];
+                    if (!isMonthCell(row[0])) break;
+                    const month = parseInt(String(row[0]).replace(/[^\d]/g, ''), 10);
+
+                    yearColumns.forEach(({ index, year }) => {
+                        const label = `${year}年 ${month}月`;
+                        if (labelSortValue(label) < startValue) return;
+                        const rawValue = row[index];
+                        if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '' || String(rawValue).trim().toLowerCase() === 'none') return;
+
+                        const value = parseNumber(rawValue, null);
+                        if (value === null) return;
+                        valuesByMetric[metricKey].set(label, value);
+                        labels.add(label);
+                    });
+                }
+            };
+
+            rows.forEach((row, rowIndex) => {
+                const title = String(row[0] || '').trim();
+                Object.entries(sectionMap).forEach(([metricKey, sectionTitle]) => {
+                    if (title !== sectionTitle) return;
+
+                    if (title === 'HSG人數') {
+                        readMetricBlock(metricKey, rowIndex, rowIndex + 1);
+                    } else {
+                        readMetricBlock(metricKey, rowIndex + 1, rowIndex + 2);
+                    }
+                });
+
+                const hsgMetric = Object.entries(hsgSectionMap).find(([, sectionTitle]) => String(row[1] || '').trim() === sectionTitle);
+                if (hsgMetric) {
+                    readMetricBlock(`hsg_${hsgMetric[0]}`, rowIndex + 1, rowIndex + 2);
+                }
+            });
+
+            const timelineLabels = Array.from(labels).sort((a, b) => labelSortValue(a) - labelSortValue(b));
+            if (timelineLabels.length === 0) return null;
+
+            const report = buildReportFromTimeline(timelineLabels);
+            ['angio', 'oncall', 'ptcd', 'ptcdre', 'pcn', 'pcnre', 'ivpTime', 'hsgCount'].forEach(metricKey => {
+                if (!valuesByMetric[metricKey]) return;
+                report[metricKey] = timelineLabels.map((label, index) => valuesByMetric[metricKey].get(label) ?? report[metricKey][index]);
+            });
+
+            Object.keys(hsgSectionMap).forEach(targetKey => {
+                const sourceKey = `hsg_${targetKey}`;
+                if (!valuesByMetric[sourceKey]) return;
+                report.hsgSatisfactions[targetKey] = timelineLabels.map((label, index) => valuesByMetric[sourceKey].get(label) ?? report.hsgSatisfactions[targetKey][index]);
+            });
+
+            return report;
+        }
+
         function parseGoogleSheetsCSV(csvText) {
             try {
                 const rows = parseCSVRows(csvText);
                 if (rows.length < 2) return null;
 
-                return parseRowsByColumns(rows) || parseRowsByMonthHeaders(rows);
+                return parseSectionedYearMonthRows(rows) || parseRowsByColumns(rows) || parseRowsByMonthHeaders(rows);
             } catch (e) {
                 console.error("CSV parsing issue: ", e);
                 return null;
